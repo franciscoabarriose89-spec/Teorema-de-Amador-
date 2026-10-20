@@ -1,67 +1,69 @@
-# Manifiesto del Kernel de Amador
+from __future__ import annotations
 
-Este manifiesto fija la correspondencia entre el manuscrito científico y la implementación determinista del kernel.
+import argparse
+from decimal import Decimal
+from typing import Any, Dict
 
-## Operador canónico
+from .benchmarking import run_canonical_benchmark
+from .core import AmadorKernel
+from .manifiesto import get_manifest
 
-Omega_Amador_canonico := Pi_{T*M -> M} o ( M_alpha^{Toeplitz} (+) T_{A, c1_BC=0}^{Symp} (+) D_{(delta^i, delta^o)}^{H_N} (+) R_{nu_rho=0}^{G_hat(M)} ) o Pi_{ker(d ev)}^{PS-KL}
 
-## Correspondencia por dominio
+def canonical_report() -> Dict[str, Any]:
+    kernel = AmadorKernel()
+    report = kernel.execute_canonical_operator({
+        "c1_BC": 0.0,
+        "volume": 1.0,
+        "n": 12,
+        "gamma": 0.1,
+        "rho": Decimal("1e-3"),
+        "temperature": Decimal("1.0"),
+        "alpha_prime": 1e-3,
+        "spectral_dimension": 2.0,
+    })
+    return {
+        "canonical_operator": report.canonical_operator,
+        "verified_lemmas": report.verified_lemmas,
+        "status": report.status,
+        "entropy_delta": str(report.entropy_delta),
+        "spectral_dimension": report.spectral_dimension,
+    }
 
-1. Dominio 1 — Lema de Clausura de Amador-Kähler
-   - módulo: `amador_kernel.kahler_ricci`
-   - símbolo: `KahlerRicciEngine`
-   - condición canónica: `c1_BC == 0.0`
 
-2. Dominio 2 — Lema de Convexificación PS-KL y Silla Estricta
-   - módulo: `amador_kernel.ps_kl_optimizer`
-   - símbolo: `ProjectivePSKLOptimizer`
-   - condición canónica: proyección sobre `ker(d ev)`
+def print_manifest_view() -> None:
+    print("=== Manifiesto Canónico del Kernel de Amador ===")
+    for item in get_manifest():
+        print(
+            f"- dominio={item['domain']} | lema={item['lemma']} | modulo={item['module']} | "
+            f"simbolo={item['symbol']} | condicion={item['closure_condition']} | "
+            f"invariante={item['invariant']}"
+        )
 
-3. Dominio 3 — Lema de Reescalamiento Conifold-Strominger
-   - módulo: `amador_kernel.strominger_conifold`
-   - símbolo: `HullStromingerConifold`
-   - condición canónica: estabilidad de pendiente y cancelación de anomalías
 
-4. Dominio 4 — Lema de Tripla Espectral Comprimida y Morfogénesis
-   - módulo: `amador_kernel.spectral_toeplitz`
-   - símbolo: `ToeplitzSpectralTriple`
-   - condición canónica: trazas sobre subespacio proyectado
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Auditor canónico del Kernel de Amador")
+    parser.add_argument("--benchmark", action="store_true", help="ejecuta benchmarks empíricos adicionales")
+    args = parser.parse_args()
 
-5. Dominio 5 — Lema de Inmersión en G_hat(M) y Valuación Nula
-   - módulo: `amador_kernel.colombeau_levi_civita`
-   - símbolo: `DiffeomorphismInvariantColombeau`
-   - condición canónica: extracción de parte finita `c_0`
+    data = canonical_report()
+    print("=== Kernel de Amador: Auditor Canónico ===")
+    print(f"Operador canónico: {data['canonical_operator']}")
+    print(f"Estado: {data['status']}")
+    print(f"Delta S total: {data['entropy_delta']} nats")
+    print(f"Dimensión espectral: {data['spectral_dimension']}")
+    print("Lemas verificados:")
+    for name, ok in data["verified_lemmas"].items():
+        print(f"  - {name}: {'OK' if ok else 'WARN'}")
 
-6. Dominio 6 — Lema del (inf,1)-Topos Cohesivo H_N y Daseinización
-   - módulo: `amador_kernel.cohesive_topos`
-   - símbolo: `CohesiveToposHN`
-   - condición canónica: duality algebra `W = R[X]/(X^k)`
+    print_manifest_view()
 
-7. Dominio 7 — Lema de Inmersión Simpléctica en T*M y Filtrado de Itô
-   - módulo: `amador_kernel.symplectic_thermodynamics`
-   - símbolo: `KoopmanAmadorThermodynamics`
-   - condición canónica: `div_{T*M} = 0` y `Delta_S_total = 0`
+    if args.benchmark:
+        print("\n=== Benchmarks deterministas ===")
+        report = run_canonical_benchmark(n_values=[8, 16, 32, 64], repeat=2)
+        for sample in report.samples:
+            print(f"n={sample.n}: {sample.elapsed_seconds:.6f}s | status={sample.status} | entropy={sample.entropy_delta} | dim={sample.spectral_dimension}")
+        print(f"Estabilidad: {'OK' if report.stable else 'WARN'}")
 
-8. Pipeline maestro
-   - módulo: `amador_kernel.core`
-   - símbolo: `AmadorKernel`
-   - condición canónica: ejecución secuencial y determinista de los siete dominios
 
-## Regla de integridad
-
-La implementación determina los invariantes del manuscrito solamente si:
-- el estado de entrada cumple la hipótesis canónica,
-- cada operador se ejecuta en orden fijo,
-- cada validación se resuelve con tolerancia explícita,
-- los benchmarks son solo capa empírica complementaria.
-
-## Uso
-
-```python
-from amador_kernel import AmadorKernel, get_manifest
-
-report = AmadorKernel().execute_canonical_operator({"c1_BC": 0.0, "volume": 1.0, "n": 12})
-print(report.status)
-print(get_manifest())
-```
+if __name__ == "__main__":
+    main()

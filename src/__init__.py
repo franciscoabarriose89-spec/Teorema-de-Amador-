@@ -16,6 +16,8 @@ Este repositorio implementa una arquitectura de tres capas para el Kernel de Ama
    - pruebas unitarias y auditorías de integración
    - comprueba invariantes, cierre cohomológico y entropía exacta
 
+El manifiesto formal del documento está disponible en `MANIFESTO.md` y en `src/amador_kernel/manifiesto.py`.
+
 ## Instalación
 
 ```bash

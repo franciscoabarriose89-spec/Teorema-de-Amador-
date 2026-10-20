@@ -1,10 +1,10 @@
-# Kernel de Amador
+# Índice académico
 
-La documentación completa del proyecto se encuentra en el directorio `docs/`.
+- `README.md` — resumen del proyecto.
+- `docs/README.md` — arquitectura general.
+- `docs/arquitectura.md` — modelo de tres capas.
+- `docs/manifiesto-academico.md` — trazabilidad con el manuscrito.
+- `docs/benchmarking.md` — validación empírica.
+- `docs/publicacion-formal.md` — publicación formal del kernel.
 
-- `docs/README.md`: índice y propósito general.
-- `docs/arquitectura.md`: descripción de la arquitectura de tres capas.
-- `docs/manifiesto-academico.md`: relación entre manuscrito e implementación.
-- `docs/benchmarking.md`: protocolo empírico de validación.
-
-La implementación actual mantiene la semántica canónica determinista y la documentación académica separada de la ejecución técnica.
+La documentación académica se mantiene separada del código ejecutable para preservar la determinación matemática del operador canónico.

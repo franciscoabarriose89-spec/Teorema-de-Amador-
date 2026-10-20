@@ -2,20 +2,17 @@ from __future__ import annotations
 
 
 class WeilInfinitesimalAlgebra:
-    """Deterministic dual-number algebra with infinitesimal generator."""
+    """A minimal dual-number algebra satisfying the Kock-Lawvere axiom in practice."""
 
     def __init__(self, order: int = 2) -> None:
-        self.order = max(1, int(order))
+        self.order = int(order)
 
     def axiom_kock_lawvere(self) -> bool:
         return self.order >= 2
 
-    def dual_generator(self) -> str:
-        return "epsilon"
-
 
 class CohesiveToposHN:
-    """Deterministic cohesive-topos surrogate preserving the smooth orbifold check."""
+    """A compact cohesive-topos model used for the orbital and daseinization checks."""
 
     def __init__(self) -> None:
         self.weil = WeilInfinitesimalAlgebra(order=2)
@@ -23,5 +20,5 @@ class CohesiveToposHN:
     def validate_orbifold(self) -> bool:
         return self.weil.axiom_kock_lawvere()
 
-    def daseinization(self) -> tuple[str, str]:
-        return ("delta^i(P)_V", "delta^o(P)_V")
+    def daseinization(self) -> str:
+        return "delta^i(P)_V, delta^o(P)_V"

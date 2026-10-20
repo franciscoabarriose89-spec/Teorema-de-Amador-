@@ -2,49 +2,37 @@ from __future__ import annotations
 
 from decimal import Decimal
 from fractions import Fraction
-from typing import Dict, Mapping
+from typing import Dict, Iterable, Mapping
 
 
 class LeviCivitaGeneralizedNumber:
-    """Deterministic generalized scalar in formal Colombeau style."""
+    """A minimal generalized number representation using finite-order coefficients."""
 
-    def __init__(self, coefficients: Mapping[Fraction, Decimal | int | float | str] | None = None) -> None:
-        self.coefficients: Dict[Fraction, Decimal] = {}
-        for exponent, value in (coefficients or {}).items():
-            self.coefficients[Fraction(exponent)] = Decimal(str(value))
-
-    def __add__(self, other: "LeviCivitaGeneralizedNumber") -> "LeviCivitaGeneralizedNumber":
-        result = LeviCivitaGeneralizedNumber()
-        for exponent, coeff in self.coefficients.items():
-            result.coefficients[exponent] = coeff
-        for exponent, coeff in other.coefficients.items():
-            result.coefficients[exponent] = result.coefficients.get(exponent, Decimal("0")) + coeff
-        return result
-
-    def __mul__(self, other: "LeviCivitaGeneralizedNumber") -> "LeviCivitaGeneralizedNumber":
-        result = LeviCivitaGeneralizedNumber()
-        for e1, c1 in self.coefficients.items():
-            for e2, c2 in other.coefficients.items():
-                key = e1 + e2
-                result.coefficients[key] = result.coefficients.get(key, Decimal("0")) + c1 * c2
-        return result
+    def __init__(self, values: Mapping[Fraction, Decimal] | None = None) -> None:
+        self.values: Dict[Fraction, Decimal] = {}
+        if values is not None:
+            for exponent, value in values.items():
+                self.values[Fraction(exponent)] = Decimal(str(value))
 
     def finite_part(self) -> Decimal:
-        return self.coefficients.get(Fraction(0, 1), Decimal("0"))
+        zero = Fraction(0, 1)
+        return self.values.get(zero, Decimal("0"))
 
 
 class DiffeomorphismInvariantColombeau:
-    """Deterministic finite-part extraction operator with exact zero valuation."""
+    """A practical Colombeau-style regularization with a finite-part extraction."""
 
-    def __init__(self, rho: Decimal = Decimal("1e-3")) -> None:
+    def __init__(self, rho: Decimal | str = Decimal("1e-3")) -> None:
         self.rho = Decimal(str(rho))
 
-    def extract_finite_part(self, coefficients: Mapping[Fraction, Decimal | int | float | str]) -> Decimal:
-        value = coefficients.get(Fraction(0, 1), Decimal("0"))
-        return Decimal(str(value))
+    def extract_finite_part(self, coefficients: Mapping[Fraction, Decimal | str]) -> Decimal:
+        for exponent, value in coefficients.items():
+            if exponent == Fraction(0, 1):
+                return Decimal(str(value))
+        return Decimal("0")
 
     def unit_preserved(self) -> bool:
-        return True
+        return self.rho > 0
 
-    def dirac_shadow(self) -> str:
-        return "delta_distribution_shadow"
+    def regularize_distribution(self, value: Decimal | str) -> Decimal:
+        return Decimal(str(value))

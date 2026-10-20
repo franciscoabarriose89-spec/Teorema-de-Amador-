@@ -6,7 +6,7 @@ from typing import Dict, Mapping
 
 
 class LeviCivitaGeneralizedNumber:
-    """A compact generalized-number object for finite-part extraction."""
+    """Deterministic generalized scalar in formal Colombeau style."""
 
     def __init__(self, coefficients: Mapping[Fraction, Decimal | int | float | str] | None = None) -> None:
         self.coefficients: Dict[Fraction, Decimal] = {}
@@ -34,7 +34,7 @@ class LeviCivitaGeneralizedNumber:
 
 
 class DiffeomorphismInvariantColombeau:
-    """Finite-part extraction operator preserving the unit of the ring."""
+    """Deterministic finite-part extraction operator with exact zero valuation."""
 
     def __init__(self, rho: Decimal = Decimal("1e-3")) -> None:
         self.rho = Decimal(str(rho))

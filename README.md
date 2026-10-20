@@ -1,70 +1,80 @@
-# Kernel de Amador
+import unittest
+from decimal import Decimal
+from fractions import Fraction
 
-El Kernel de Amador es una librería científica escrita en Python puro, sin dependencias externas, diseñada para ejecutar el operador canónico
+from src.amador_kernel import AmadorKernel
+from src.amador_kernel.kahler_ricci import CohomologicalObstructionError, KahlerRicciEngine
+from src.amador_kernel.ps_kl_optimizer import ProjectivePSKLOptimizer
+from src.amador_kernel.strominger_conifold import HullStromingerConifold
+from src.amador_kernel.spectral_toeplitz import ToeplitzSpectralTriple
+from src.amador_kernel.colombeau_levi_civita import DiffeomorphismInvariantColombeau
+from src.amador_kernel.cohesive_topos import CohesiveToposHN
+from src.amador_kernel.symplectic_thermodynamics import KoopmanAmadorThermodynamics
 
-Omega_Amador_canonico := Pi_{T*M -> M} o ( M_alpha^{Toeplitz} (+) T_{A, c1_BC=0}^{Symp} (+) D_{(delta^i, delta^o)}^{H_N} (+) R_{nu_rho=0}^{G_hat(M)} ) o Pi_{ker(d ev)}^{PS-KL}
 
-con validación simbólico-numérica, colapso determinista de complejidad O(2^n) -> O(n) y evolución geométrica bajo termodinámica tensorial a entropía cero.
+class TestAmadorKernel(unittest.TestCase):
+    def test_kahler_ricci_closure(self):
+        engine = KahlerRicciEngine(c1_BC=0.0, volume=1.0)
+        self.assertTrue(engine.validate())
+        self.assertTrue(engine.check_a_priori_bounds())
+        self.assertAlmostEqual(engine.evolve_potential(0.5, 1.0), 0.5 + 0.5 * (0.6931471805599453), places=12)
 
-## Instalación
+        with self.assertRaises(CohomologicalObstructionError):
+            KahlerRicciEngine(c1_BC=1e-6).validate()
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
+    def test_ps_kl_projection_and_saddle(self):
+        opt = ProjectivePSKLOptimizer(n=12, gamma=0.1)
+        self.assertEqual(opt.project_to_ker_d_ev([3.0, 1.0, 2.0]), [1.0, -1.0, 0.0])
+        self.assertTrue(opt.strict_saddle_check([], [-1.0]))
+        self.assertGreaterEqual(opt.polyak_lojasiewicz(1.0, 0.2), 0.0)
 
-## Ejecución del auditor científico
+    def test_conifold_stability(self):
+        conifold = HullStromingerConifold(alpha_prime=0.1)
+        self.assertTrue(conifold.validate_stability())
+        self.assertTrue(conifold.check_anomaly_cancellation())
+        self.assertGreater(conifold.dynamic_recaling(0.5), 0.0)
 
-```bash
-python -m src.amador_kernel.cli_auditor
-```
+    def test_spectral_toeplitz(self):
+        triple = ToeplitzSpectralTriple(sigma=2.0)
+        self.assertTrue(triple.verify_commutation_relations())
+        self.assertEqual(triple.dynamic_spectral_dimension(1.0), 0.0)
+        self.assertEqual(triple.dynamic_spectral_dimension(2.5), 2.0)
+        self.assertEqual(triple.dynamic_spectral_dimension(10.0), 4.0)
 
-## Ejecutar pruebas
+    def test_colombeau_finite_part(self):
+        colombeau = DiffeomorphismInvariantColombeau(rho=Decimal("1e-3"))
+        self.assertEqual(
+            colombeau.extract_finite_part({Fraction(0, 1): Decimal("2.0")}),
+            Decimal("2.0"),
+        )
+        self.assertTrue(colombeau.unit_preserved())
 
-```bash
-python -m unittest discover -s tests -v
-```
+    def test_cohesive_topos(self):
+        topo = CohesiveToposHN()
+        self.assertTrue(topo.validate_orbifold())
+        self.assertEqual(topo.daseinization(), ("delta^i(P)_V", "delta^o(P)_V"))
 
-## Uso básico
+    def test_symplectic_entropy(self):
+        thermo = KoopmanAmadorThermodynamics(temperature=Decimal("1.0"))
+        self.assertEqual(thermo.entropy_balance(), Decimal("0.00000000"))
+        self.assertEqual(thermo.divergence_balance(), Decimal("0.00000000"))
 
-```python
-from amador_kernel import AmadorKernel
+    def test_kernel_pipeline(self):
+        kernel = AmadorKernel()
+        report = kernel.execute_canonical_operator({
+            "c1_BC": 0.0,
+            "volume": 1.0,
+            "n": 12,
+            "gamma": 0.1,
+            "rho": Decimal("1e-3"),
+            "temperature": Decimal("1.0"),
+            "alpha_prime": 1e-3,
+            "spectral_dimension": 2.0,
+        })
+        self.assertEqual(report.status, "ok")
+        self.assertTrue(report.verified_lemmas["kahler_ricci"])
+        self.assertEqual(report.entropy_delta, Decimal("0.00000000"))
 
-kernel = AmadorKernel()
-report = kernel.execute_canonical_operator({
-    "c1_BC": 0.0,
-    "volume": 1.0,
-    "n": 12,
-    "gamma": 0.1,
-    "rho": 1e-3,
-    "temperature": 1.0,
-})
 
-print(report.status)
-print(report.canonical_operator)
-print(report.verified_lemmas)
-```
-
-## Estructura
-
-- `core.py`: orquestación maestra del kernel.
-- `kahler_ricci.py`: cierre cohomológico y flujo de Kähler-Ricci.
-- `ps_kl_optimizer.py`: optimización proyectiva PS-KL.
-- `strominger_conifold.py`: transición conifold y estabilidad.
-- `spectral_toeplitz.py`: triple espectral comprimido.
-- `colombeau_levi_civita.py`: números generalizados de Colombeau.
-- `cohesive_topos.py`: topología cohesiva y daseinización.
-- `symplectic_thermodynamics.py`: levantamiento simpléctico y entropía.
-- `cli_auditor.py`: auditor científico en consola.
-
-## Invariantes certificados
-
-La librería devuelve un `KernelExecutionReport` con:
-
-- `canonical_operator`: nombre formal del operador canónico.
-- `verified_lemmas`: siete lemas verificados.
-- `invariants`: medidas relevantes del flujo.
-- `status`: estado final del cálculo.
-- `entropy_delta`: diferencia de entropía, normalmente `Decimal('0.00000000')`.
-
+if __name__ == "__main__":
+    unittest.main()

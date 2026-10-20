@@ -1,4 +1,12 @@
 from .core import AmadorKernel, KernelExecutionReport, KernelState
+from .benchmarking import BenchmarkReport, BenchmarkSample, run_canonical_benchmark
 
 __version__ = "1700.0.0"
-__all__ = ["AmadorKernel", "KernelExecutionReport", "KernelState"]
+__all__ = [
+    "AmadorKernel",
+    "KernelExecutionReport",
+    "KernelState",
+    "BenchmarkReport",
+    "BenchmarkSample",
+    "run_canonical_benchmark",
+]

@@ -3,6 +3,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from src.amador_kernel import AmadorKernel
+from src.amador_kernel.benchmarking import run_canonical_benchmark
 from src.amador_kernel.kahler_ricci import CohomologicalObstructionError, KahlerRicciEngine
 from src.amador_kernel.ps_kl_optimizer import ProjectivePSKLOptimizer
 from src.amador_kernel.strominger_conifold import HullStromingerConifold
@@ -13,6 +14,23 @@ from src.amador_kernel.symplectic_thermodynamics import KoopmanAmadorThermodynam
 
 
 class TestAmadorKernel(unittest.TestCase):
+    def test_layer_1_canonical_invariants(self):
+        kernel = AmadorKernel()
+        report = kernel.execute_canonical_operator({
+            "c1_BC": 0.0,
+            "volume": 1.0,
+            "n": 12,
+            "gamma": 0.1,
+            "rho": Decimal("1e-3"),
+            "temperature": Decimal("1.0"),
+            "alpha_prime": 1e-3,
+            "spectral_dimension": 2.0,
+        })
+        self.assertEqual(report.status, "ok")
+        self.assertTrue(report.verified_lemmas["kahler_ricci"])
+        self.assertEqual(report.entropy_delta, Decimal("0.00000000"))
+        self.assertEqual(report.spectral_dimension, 2.0)
+
     def test_kahler_ricci_closure(self):
         engine = KahlerRicciEngine(c1_BC=0.0, volume=1.0)
         self.assertTrue(engine.validate())
@@ -25,7 +43,7 @@ class TestAmadorKernel(unittest.TestCase):
     def test_ps_kl_projection_and_saddle(self):
         opt = ProjectivePSKLOptimizer(n=12, gamma=0.1)
         self.assertEqual(opt.project_to_ker_d_ev([3.0, 1.0, 2.0]), [1.0, -1.0, 0.0])
-        self.assertTrue(opt.strict_saddle_check([], [-1.0]))
+        self.assertTrue(opt.strict_saddle_check([0.0], [-1.0]))
         self.assertGreaterEqual(opt.polyak_lojasiewicz(1.0, 0.2), 0.0)
 
     def test_conifold_stability(self):
@@ -59,21 +77,11 @@ class TestAmadorKernel(unittest.TestCase):
         self.assertEqual(thermo.entropy_balance(), Decimal("0.00000000"))
         self.assertEqual(thermo.divergence_balance(), Decimal("0.00000000"))
 
-    def test_kernel_pipeline(self):
-        kernel = AmadorKernel()
-        report = kernel.execute_canonical_operator({
-            "c1_BC": 0.0,
-            "volume": 1.0,
-            "n": 12,
-            "gamma": 0.1,
-            "rho": Decimal("1e-3"),
-            "temperature": Decimal("1.0"),
-            "alpha_prime": 1e-3,
-            "spectral_dimension": 2.0,
-        })
-        self.assertEqual(report.status, "ok")
-        self.assertTrue(report.verified_lemmas["kahler_ricci"])
-        self.assertEqual(report.entropy_delta, Decimal("0.00000000"))
+    def test_layer_2_benchmark_report(self):
+        report = run_canonical_benchmark(n_values=[8, 16], repeat=2)
+        self.assertTrue(report.stable)
+        self.assertEqual(report.complexity_label, "linear-like")
+        self.assertTrue(len(report.samples) >= 2)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import argparse
 from decimal import Decimal
 from typing import Any, Dict
 
+from .benchmarking import run_canonical_benchmark
 from .core import AmadorKernel
 
 
@@ -28,6 +30,10 @@ def canonical_report() -> Dict[str, Any]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Auditor canónico del Kernel de Amador")
+    parser.add_argument("--benchmark", action="store_true", help="ejecuta la capa empírica de benchmarks")
+    args = parser.parse_args()
+
     data = canonical_report()
     print("=== Kernel de Amador: Auditor Canónico ===")
     print(f"Operador canónico: {data['canonical_operator']}")
@@ -37,6 +43,13 @@ def main() -> None:
     print("Lemas verificados:")
     for name, ok in data["verified_lemmas"].items():
         print(f"  - {name}: {'OK' if ok else 'WARN'}")
+
+    if args.benchmark:
+        print("\n=== Benchmarks deterministas ===")
+        report = run_canonical_benchmark(n_values=[8, 16, 32, 64], repeat=2)
+        for sample in report.samples:
+            print(f"n={sample.n}: {sample.elapsed_seconds:.6f}s | status={sample.status} | entropy={sample.entropy_delta} | dim={sample.spectral_dimension}")
+        print(f"Estabilidad: {'OK' if report.stable else 'WARN'}")
 
 
 if __name__ == "__main__":
